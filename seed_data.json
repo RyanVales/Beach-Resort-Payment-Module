@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "guest_name": "Ken",
+    "amount": 12300.0,
+    "payment_method": "GCash",
+    "description": "Debt",
+    "created_at": "2025-11-15T13:46:01.564593"
+  },
+  {
+    "id": 2,
+    "guest_name": "Jessa Orcine",
+    "amount": 5672.0,
+    "payment_method": "Cash",
+    "description": "",
+    "created_at": "2025-11-15T14:01:36.286754"
+  },
+  {
+    "id": 3,
+    "guest_name": "Prince Paul Misa",
+    "amount": 18354.0,
+    "payment_method": "Credit Card",
+    "description": "",
+    "created_at": "2025-11-15T14:52:40.716418"
+  }
+]

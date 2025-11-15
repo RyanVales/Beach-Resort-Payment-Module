@@ -1,4 +1,5 @@
 import os
+import json
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
@@ -17,9 +18,35 @@ class Payment(db.Model):
     description = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Create database
-with app.app_context():
+def initialize_database():
+    """Create tables and load seed data on first run"""
     db.create_all()
+    
+    # Check if database is empty and seed_data.json exists
+    if Payment.query.first() is None and os.path.exists('seed_data.json'):
+        try:
+            with open('seed_data.json', 'r') as f:
+                seed_data = json.load(f)
+            
+            if seed_data:  # Only load if there's data
+                for item in seed_data:
+                    payment = Payment(
+                        guest_name=item.get('guest_name', 'Unknown'),
+                        amount=float(item.get('amount', 0)),
+                        payment_method=item.get('payment_method', 'Cash'),
+                        description=item.get('description', ''),
+                        created_at=datetime.fromisoformat(item['created_at']) if 'created_at' in item else datetime.utcnow()
+                    )
+                    db.session.add(payment)
+                
+                db.session.commit()
+                print(f"✓ Database initialized with {len(seed_data)} payment records!")
+        except Exception as e:
+            print(f"Warning: Could not load seed data: {e}")
+
+# Create database and initialize
+with app.app_context():
+    initialize_database()
 
 
 @app.route('/')
