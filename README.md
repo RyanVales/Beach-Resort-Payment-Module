@@ -1,10 +1,10 @@
 Group 3
-Booc, Jose
-Gatab, Giofranco
-Lavina, Lorenzo
-Orcejola, Ken
-Orcine, Jessa
-Vales, Justin
+- Booc, Jose
+- Gatab, Giofranco
+- Lavina, Lorenzo
+- Orcejola, Ken
+- Orcine, Jessa
+- Vales, Justin
 
 
 ## Key Functionalities & Use Cases
