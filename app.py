@@ -44,6 +44,24 @@ def initialize_database():
         except Exception as e:
             print(f"Warning: Could not load seed data: {e}")
 
+def export_seed_data():
+    """Export current payments to seed_data.json"""
+    try:
+        payments = Payment.query.all()
+        data = [{
+            'id': p.id,
+            'guest_name': p.guest_name,
+            'amount': p.amount,
+            'payment_method': p.payment_method,
+            'description': p.description,
+            'created_at': p.created_at.isoformat() if p.created_at else None
+        } for p in payments]
+        
+        with open('seed_data.json', 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"Warning: Could not export seed data: {e}")
+
 # Create database and initialize
 with app.app_context():
     initialize_database()
@@ -74,6 +92,7 @@ def list_payments():
             )
             db.session.add(p)
             db.session.commit()
+            export_seed_data()  # Auto-export after adding
             flash('Payment added.', 'success')
             return redirect(url_for('list_payments'))
 
@@ -92,6 +111,7 @@ def edit_payment(pid):
         p.payment_method = request.form.get('payment_method')
         p.description = request.form.get('description')
         db.session.commit()
+        export_seed_data()  # Auto-export after editing
         flash('Payment updated.', 'success')
         return redirect(url_for('list_payments'))
 
@@ -104,6 +124,7 @@ def delete_payment(pid):
     p = Payment.query.get_or_404(pid)
     db.session.delete(p)
     db.session.commit()
+    export_seed_data()  # Auto-export after deleting
     flash('Payment deleted.', 'success')
     return redirect(url_for('list_payments'))
 
