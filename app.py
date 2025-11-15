@@ -1,0 +1,106 @@
+import os
+from flask import Flask, render_template, request, redirect, url_for, flash
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///payments.db'
+app.config['SECRET_KEY'] = 'your-secret-key'
+db = SQLAlchemy(app)
+
+# Payment Model
+class Payment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    guest_name = db.Column(db.String(100), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    payment_method = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# Create database
+with app.app_context():
+    db.create_all()
+
+
+@app.route('/')
+def home():
+    return redirect(url_for('list_payments'))
+
+
+# List + Add
+@app.route('/payments', methods=['GET', 'POST'])
+def list_payments():
+    if request.method == 'POST':
+        guest = request.form.get('guest_name')
+        amount = request.form.get('amount')
+        method = request.form.get('payment_method')
+        desc = request.form.get('description')
+
+        if not (guest and amount and method):
+            flash('Guest, amount, and method are required.', 'danger')
+        else:
+            p = Payment(
+                guest_name=guest,
+                amount=float(amount),
+                payment_method=method,
+                description=desc
+            )
+            db.session.add(p)
+            db.session.commit()
+            flash('Payment added.', 'success')
+            return redirect(url_for('list_payments'))
+
+    payments = Payment.query.order_by(Payment.created_at.desc()).all()
+    return render_template('list.html', payments=payments)
+
+
+# Edit
+@app.route('/payments/<int:pid>/edit', methods=['GET', 'POST'])
+def edit_payment(pid):
+    p = Payment.query.get_or_404(pid)
+
+    if request.method == 'POST':
+        p.guest_name = request.form.get('guest_name')
+        p.amount = float(request.form.get('amount'))
+        p.payment_method = request.form.get('payment_method')
+        p.description = request.form.get('description')
+        db.session.commit()
+        flash('Payment updated.', 'success')
+        return redirect(url_for('list_payments'))
+
+    return render_template('edit.html', payment=p)
+
+
+# Delete
+@app.route('/payments/<int:pid>/delete', methods=['POST'])
+def delete_payment(pid):
+    p = Payment.query.get_or_404(pid)
+    db.session.delete(p)
+    db.session.commit()
+    flash('Payment deleted.', 'success')
+    return redirect(url_for('list_payments'))
+
+
+# Report
+@app.route('/report')
+def report():
+    payments = Payment.query.order_by(Payment.created_at.desc()).all()
+    total_amount = sum(p.amount for p in payments)
+    payment_count = len(payments)
+    
+    payments_by_method = {}
+    for payment in payments:
+        if payment.payment_method not in payments_by_method:
+            payments_by_method[payment.payment_method] = {'count': 0, 'total': 0}
+        payments_by_method[payment.payment_method]['count'] += 1
+        payments_by_method[payment.payment_method]['total'] += payment.amount
+    
+    return render_template('report.html', 
+                         payments=payments,
+                         total_amount=total_amount,
+                         payment_count=payment_count,
+                         payments_by_method=payments_by_method)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
